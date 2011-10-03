@@ -1,20 +1,20 @@
 <?php
 /**
  * Author : Julien Moquet
- * 
- * Simple conversion from javascript to PHP of Proj4php by Mike Adair madairATdmsolutions.ca and Richard Greenwood rich@greenwoodmap.com 
- *                     
- * License: LGPL as per: http://www.gnu.org/copyleft/lesser.html 
+ *
+ * Simple conversion from javascript to PHP of Proj4php by Mike Adair madairATdmsolutions.ca and Richard Greenwood rich@greenwoodmap.com
+ *
+ * License: LGPL as per: http://www.gnu.org/copyleft/lesser.html
  */
 
 $dir = dirname(__FILE__);
- 
+
 require_once($dir."/proj4phpProj.php");
 require_once($dir."/proj4phpCommon.php");
 require_once($dir."/proj4phpDatum.php");
 require_once($dir."/proj4phpLongLat.php");
 require_once($dir."/proj4phpPoint.php");
-	
+
 class Proj4php
 {
 	protected $defaultDatum = 'WGS84';
@@ -27,9 +27,9 @@ class Proj4php
 	public static $WGS84 = null;
 	public static $primeMeridian = array();
 	public static $proj = array();
-	
+
 	/**
-  Proj4php.defs is a collection of coordinate system definition objects in the 
+  Proj4php.defs is a collection of coordinate system definition objects in the
   PROJ.4 command line format.
   Generally a def is added by means of a separate .js file for example:
 
@@ -54,7 +54,7 @@ class Proj4php
 		self::$defs['EPSG:900913'] = self::$defs['EPSG:3785'];
 		self::$defs['EPSG:102113'] = self::$defs['EPSG:3785'];
 	}
-	
+
 	//lookup table to go from the projection name in WKT to the Proj4php projection name
 	//build this out as required
 	protected function initWKTProjections()
@@ -66,7 +66,7 @@ class Proj4php
 		self::$wktProjections["Lambert Azimuthal Equal Area"] = "laea";
 		self::$wktProjections["Universal Transverse Mercator System"] = "utm";
 	}
-	
+
 	protected function initDatum()
 	{
 		self::$datum["WGS84"] =  array('towgs84'=> "0,0,0", 'ellipse'=> "WGS84", 'datumName'=> "WGS84");
@@ -80,7 +80,7 @@ class Proj4php
 		self::$datum["nzgd49"] =  array('towgs84'=> "59.47,-5.04,187.44,0.47,-0.1,1.024,-4.5993", 'ellipse'=> "intl", 'datumName'=> "New Zealand Geodetic Datum 1949");
 		self::$datum["OSGB36"] = array('towgs84'=> "446.448,-125.157,542.060,0.1502,0.2470,0.8421,-20.4894", 'ellipse'=> "airy", 'datumName'=> "Airy 1830");
 	}
-	
+
 	protected function initEllipsoid()
 	{
 		self::$ellipsoid["MERIT"] =  array('a'=>6378137.0, 'rf'=>298.257, 'ellipseName'=>"MERIT 1983");
@@ -126,7 +126,7 @@ class Proj4php
 		self::$ellipsoid["WGS84"] =  array('a'=>6378137.0, 'rf'=>298.257223563, 'ellipseName'=>"WGS 84");
 		self::$ellipsoid["sphere"] =  array('a'=>6370997.0, 'b'=>6370997.0, 'ellipseName'=>"Normal Sphere (r=6370997)");
 	}
-	
+
 	protected function initPrimeMeridian()
 	{
 		self::$primeMeridian["greenwich"] = '0.0';               //"0dE",
@@ -143,7 +143,7 @@ class Proj4php
 		self::$primeMeridian["athens"] =      23.7163375;       //"23d42'58.815\"E",
 		self::$primeMeridian["oslo"] =        10.722916666667;  //"10d43'22.5\"E"
 	}
-	
+
 	public function __construct()
 	{
 		$this->initWKTProjections();
@@ -156,8 +156,8 @@ class Proj4php
 		self::$common = new proj4phpCommon();
 	    self::$WGS84 = new Proj4phpProj('WGS84');
 	}
-	
-	/** 
+
+	/**
     * Method: transform(source, dest, point)
     * Transform a point coordinate from one map projection to another.  This is
     * really the only public method you should need to use.
@@ -178,7 +178,7 @@ class Proj4php
             $this->reportError("Proj4php initialization for:".$dest->srsCode." not yet complete");
             return $point;
         }
-		
+
 		// Workaround for Spherical Mercator
         if (($source->srsProjNumber =="900913" && $dest->datumCode != "WGS84") ||
             ($dest->srsProjNumber == "900913" && $source->datumCode != "WGS84")) {
@@ -186,12 +186,12 @@ class Proj4php
             $this->transform($source, $wgs84, $point);
             $source = $wgs84;
         }
-		
+
 		// DGR, 2010/11/12
         if ($source->axis!="enu") {
             $this->adjust_axis($source,false,$point);
         }
-		
+
 		// Transform source points to long/lat, if they aren't already.
         if ( $source->projName=="longlat") {
             $point->x *= Proj4php::$common->D2R;  // convert degrees to radians
@@ -203,12 +203,12 @@ class Proj4php
             }
             $source->inverse($point); // Convert Cartesian to longlat
         }
-		
+
 		// Adjust for the prime meridian if necessary
-        if (isset($source->from_greenwich)) { 
-            $point->x += $source->from_greenwich; 
+        if (isset($source->from_greenwich)) {
+            $point->x += $source->from_greenwich;
         }
-		
+
 		// Convert datums if needed, and if possible.
         $point = $this->datum_transform( $source->datum, $dest->datum, $point );
 
@@ -217,7 +217,7 @@ class Proj4php
             $point->x -= $dest->from_greenwich;
         }
 
-        if( $dest->projName=="longlat" ) {             
+        if( $dest->projName=="longlat" ) {
             // convert radians to decimal degrees
             $point->x *= Proj4php::$common->R2D;
             $point->y *= Proj4php::$common->R2D;
@@ -236,7 +236,7 @@ class Proj4php
 
         return $point;
 	}
-	
+
 	/** datum_transform()
       source coordinate system definition,
       destination coordinate system definition,
@@ -318,8 +318,8 @@ class Proj4php
       }
       return $point;
     }
-	
-	
+
+
     /**
      * Function: adjust_axis
      * Normalize or de-normalized the x/y/z axes.  The normal form is "enu"
@@ -368,14 +368,14 @@ class Proj4php
 
     /**
      * Function: reportError
-     * An internal method to report errors back to user. 
+     * An internal method to report errors back to user.
      * Override this in applications to report error messages or throw exceptions.
      */
     public function reportError($msg) {
       //console.log(msg);
 	  //echo $msg;
     }
-	
+
 	/**
 	* Function : loadScript
 	* adapted from original. PHP is simplier.
@@ -387,7 +387,7 @@ class Proj4php
 		else
 			throw(new Exception("Le fichier $filename n'a pas été trouvé."));
     }
-	
+
 	/**
  * Function: extend
  * Copy all properties of a source object to a destination object.  Modifies
@@ -401,7 +401,7 @@ class Proj4php
  * Returns:
  * {Object} The destination object.
  */
-	public function extend($destination, $source) {
+	public static function extend($destination, $source) {
 	  if ($source!=null)
       foreach($source as $key=>$value)
 	  {
